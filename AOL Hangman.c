@@ -7,7 +7,7 @@
 // Daftar kata untuk permainan
 const char *wordList[] = {
     "programming", "skibidi", "computer", "developer", "binus", 
-    "sigma", "keyboard", "language", "science", "algorithm","mewing"
+    "sigma", "keyboard", "language", "science", "algorithm", "mewing"
 };
 const int wordCount = sizeof(wordList) / sizeof(wordList[0]);
 
@@ -29,15 +29,14 @@ void displayHangman(int mistakes) {
 
 // Memilih kata secara acak
 const char* getRandomWord() {
-    srand(time(NULL)); // Seed untuk random
     return wordList[rand() % wordCount];
 }
 
 // Fungsi untuk mengurutkan array huruf
 void sortGuessedLetters(char *letters, int count) {
 	int i,j;
-    for ( i = 0; i < count - 1; i++) {
-        for ( j = i + 1; j < count; j++) {
+    for (i = 0; i < count - 1; i++) {
+        for (j = i + 1; j < count; j++) {
             if (letters[i] > letters[j]) {
                 char temp = letters[i];
                 letters[i] = letters[j];
@@ -47,27 +46,23 @@ void sortGuessedLetters(char *letters, int count) {
     }
 }
 
-// Main function
-int main() {
+// Fungsi utama untuk satu ronde permainan
+int playGame(int *score) {
     const char *word = getRandomWord();
     int wordLength = strlen(word);
     char guessed[wordLength + 1];
     int mistakes = 0, maxMistakes = 8;
     char guessedLetters[26] = {0}; // Menyimpan huruf yang sudah ditebak
     int guessedCount = 0;
-    int score = 0; // Variabel skor
-    const int timeBonusMax = 100; // Maksimal bonus waktu
 
-    // Mengisi guessed dengan underscore
+    // Inisialisasi guessed dengan underscore
     int i;
     for (i = 0; i < wordLength; i++) {
         guessed[i] = '_';
     }
     guessed[wordLength] = '\0';
 
-    printf("Welcome to Hangman!\n");
-
-    // Catat waktu mulai permainan
+    // Catat waktu mulai
     time_t startTime = time(NULL);
 
     // Game loop
@@ -75,7 +70,7 @@ int main() {
         printf("\nWord: %s\n", guessed);
         displayHangman(mistakes);
 
-        // Menampilkan huruf yang sudah ditebak
+        // Tampilkan huruf yang sudah ditebak
         sortGuessedLetters(guessedLetters, guessedCount);
         printf("Guessed letters: ");
         for (i = 0; i < guessedCount; i++) {
@@ -122,13 +117,13 @@ int main() {
 
         if (!correctGuess) {
             mistakes++;
-            if (score > 0) {
-                score -= 2; // Penalti untuk tebakan salah
+            if (*score > 0) {
+                *score -= 2; // Penalti untuk tebakan salah
             }
-            printf("Wrong guess! Score: %d\n", score);
+            printf("Wrong guess! Score: %d\n", *score);
         } else {
-            score += 5; // Bonus untuk tebakan benar
-            printf("Correct guess! Score: %d\n", score);
+            *score += 5; // Bonus untuk tebakan benar
+            printf("Correct guess! Score: %d\n", *score);
         }
 
         // Cek apakah pemain menang
@@ -138,23 +133,47 @@ int main() {
         }
     }
 
-    // Catat waktu selesai permainan
+    // Catat waktu selesai
     time_t endTime = time(NULL);
     double timeTaken = difftime(endTime, startTime);
 
-    // Hitung bonus waktu
-    int timeBonus = (timeBonusMax - (int)timeTaken > 0) ? timeBonusMax - (int)timeTaken : 0;
-    score += timeBonus;
+    // Hitung bonus waktu (maksimal 15 detik)
+    int timeBonus = (timeTaken <= 15) ? 15 - (int)timeTaken : 0;
+    *score += timeBonus;
 
-    // Cek apakah pemain kalah
+    // Tampilkan hasil akhir
     if (mistakes == maxMistakes) {
         displayHangman(mistakes);
         printf("\nGame over! The word was: %s\n", word);
     }
-
-    // Tampilkan skor akhir
-    printf("Final Score: %d (Time Bonus: %d)\n", score, timeBonus);
     printf("Time Taken: %.0f seconds\n", timeTaken);
+    printf("Time Bonus: %d\n", timeBonus);
+    printf("Final Score: %d\n", *score);
 
+    // Return apakah pemain menang
+    return strcmp(word, guessed) == 0;
+}
+
+// Main function
+int main() {
+    srand(time(NULL)); // Seed untuk random
+    int score = 0;
+    char playAgain;
+
+    do {
+        int result = playGame(&score);
+
+        if (result) {
+            printf("\nDo you want to play again? (y/n): ");
+            scanf(" %c", &playAgain);
+        } else {
+            printf("\nGame over! Final Score: %d\n", score);
+            break;
+        }
+
+    } while (tolower(playAgain) == 'y');
+
+    printf("Thank you for playing! Your total score: %d\n", score);
     return 0;
 }
+
